@@ -1,0 +1,20 @@
+Options -MultiViews
+RewriteEngine On
+RewriteRule ^about(?:\.php)?/?$ /about.html [R=301,L]
+RewriteRule ^services(?:\.php)?/?$ /services.html [R=301,L]
+RewriteRule ^contact(?:\.php)?/?$ /contact.html [R=301,L]
+RewriteRule ^frequently-asked-question(?:\.php)?/?$ /faq.html [R=301,L]
+RewriteRule ^trademark-registration-detail(?:\.php)?/?$ /trademark-registration.html [R=301,L]
+RewriteRule ^copyright-registration-detail(?:\.php)?/?$ /copyright-registration.html [R=301,L]
+RewriteRule ^amazon-brand-registry(?:\.php)?/?$ /amazon-brand-registry.html [R=301,L]
+RewriteRule ^privacy-policy(?:\.php)?/?$ /privacy-policy.html [R=301,L]
+RewriteRule ^terms-of-service(?:\.php)?/?$ /terms-of-service.html [R=301,L]
+
+<IfModule mod_expires.c>
+ExpiresActive On
+ExpiresByType text/css "access plus 1 year"
+ExpiresByType application/javascript "access plus 1 year"
+ExpiresByType image/avif "access plus 1 year"
+ExpiresByType image/webp "access plus 1 year"
+ExpiresByType font/woff2 "access plus 1 year"
+</IfModule>
