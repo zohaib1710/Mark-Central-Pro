@@ -4,18 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "node scripts/build.mjs --clean",
-    "build:html": "node scripts/build.mjs",
-    "build:css": "tailwindcss -i css/input.css -o dist/css/style.css --minify",
-    "build": "npm run build:html && npm run build:css",
-    "dev": "npm run build:html && tailwindcss -i css/input.css -o dist/css/style.css --watch",
-    "check": "node scripts/check.mjs",
-    "check:visual": "node scripts/visual-check.mjs"
+    "build": "tailwindcss -i css/input.css -o css/style.css --minify",
+    "dev": "tailwindcss -i css/input.css -o css/style.css --watch",
+    "check": "node scripts/check.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.0",
-    "lighthouse": "^13.4.1",
-    "playwright-core": "^1.63.0",
     "tailwindcss": "^4.1.0"
   }
 }

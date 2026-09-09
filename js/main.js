@@ -1,30 +1,53 @@
-const $=(s,c=document)=>c.querySelector(s);const $$=(s,c=document)=>[...c.querySelectorAll(s)];
-
-const mobilePanel=$('#mobile-panel');const menuToggle=$('#menu-toggle');const mobileClose=$('#mobile-close');let menuReturn=null;
-function setPageInert(value){$$('.site-header,main,.site-footer').forEach(el=>el.toggleAttribute('inert',value))}
-function setMenu(open){if(!mobilePanel)return;mobilePanel.classList.toggle('open',open);mobilePanel.setAttribute('aria-hidden',String(!open));menuToggle?.setAttribute('aria-expanded',String(open));document.body.classList.toggle('no-scroll',open);setPageInert(open);if(open){menuReturn=document.activeElement;mobileClose.focus()}else{menuReturn?.focus()}}
-menuToggle?.addEventListener('click',()=>setMenu(true));mobileClose?.addEventListener('click',()=>setMenu(false));
-$$('a',mobilePanel).forEach(link=>link.addEventListener('click',()=>{if(!link.hasAttribute('data-modal-trigger'))setMenu(false)}));
-
-const navDrop=$('.nav-drop');const dropButton=navDrop?.querySelector('button');dropButton?.addEventListener('click',()=>{const open=navDrop.classList.toggle('open');dropButton.setAttribute('aria-expanded',String(open))});document.addEventListener('click',e=>{if(navDrop&&!navDrop.contains(e.target)){navDrop.classList.remove('open');dropButton.setAttribute('aria-expanded','false')}});
-
-$$('.faq-button').forEach(button=>button.addEventListener('click',()=>{const expanded=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',String(!expanded));const panel=document.getElementById(button.getAttribute('aria-controls'));panel?.toggleAttribute('data-open',!expanded)}));
-
-const modal=$('#lead-modal');const dialog=modal?.querySelector('[role="dialog"]');const closeModalButton=$('#modal-close');let modalReturn=null;
-const focusable='a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
-function openModal(trigger){if(!modal)return;const fromMobile=Boolean(trigger.closest('#mobile-panel'));if(mobilePanel?.classList.contains('open'))setMenu(false);modalReturn=fromMobile?menuToggle:trigger;const form=$('#lead-form');form.elements.source_page.value=location.pathname;form.elements.selected_service.value=trigger.dataset.service||'';form.elements.selected_package.value=trigger.dataset.package||'';modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('no-scroll');setPageInert(true);setTimeout(()=>form.elements.name.focus(),20)}
-function closeModal(){if(!modal)return;modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('no-scroll');setPageInert(false);modalReturn?.focus()}
-$$('[data-modal-trigger]').forEach(t=>t.addEventListener('click',e=>{e.preventDefault();openModal(t)}));closeModalButton?.addEventListener('click',closeModal);modal?.addEventListener('click',e=>{if(e.target.dataset.modalBackdrop!==undefined)closeModal()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(modal?.classList.contains('open'))closeModal();else if(mobilePanel?.classList.contains('open'))setMenu(false);else if(navDrop?.classList.contains('open')){navDrop.classList.remove('open');dropButton.setAttribute('aria-expanded','false');dropButton.focus()}}if(e.key==='Tab'){const scope=modal?.classList.contains('open')?dialog:mobilePanel?.classList.contains('open')?mobilePanel:null;if(scope){const nodes=$$(focusable,scope);const first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}}});
-
-function validateField(field){const value=field.value.trim();let message='';if(field.required&&!value)message='This field is required.';else if(field.type==='email'&&value&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))message='Enter a valid email address.';else if(field.type==='tel'&&value&&!/^[+()\-\s\d]{7,20}$/.test(value))message='Enter a valid phone number.';field.setAttribute('aria-invalid',String(Boolean(message)));const error=document.getElementById(`${field.id}-error`);if(error)error.textContent=message;return !message}
-async function submitLeadForm(formData){void formData;throw new Error('SUBMISSION_UNAVAILABLE')}
-$$('form[data-validate]').forEach(form=>{const fields=$$('input[required],textarea[required],input[type="email"],input[type="tel"]',form);fields.forEach(f=>f.addEventListener('blur',()=>validateField(f)));form.addEventListener('submit',async e=>{e.preventDefault();const valid=fields.map(validateField).every(Boolean);const summary=$('.error-summary',form);const status=$('.form-status',form);status.className='form-status';if(!valid){summary.classList.add('show');summary.focus();return}summary.classList.remove('show');const submit=$('[type="submit"]',form);submit.disabled=true;submit.setAttribute('aria-busy','true');try{await submitLeadForm(new FormData(form))}catch(error){if(error.message==='SUBMISSION_UNAVAILABLE'){status.innerHTML='We couldn’t send your request online. Please call <a href="tel:+17545476430">+1 754 547-6430</a> or email <a href="mailto:support@markcentralpro.com">support@markcentralpro.com</a>.';status.className='form-status notice show';status.focus()}else{status.textContent='We couldn’t send your request. Please contact our support team directly.';status.className='form-status notice show'}}finally{submit.disabled=false;submit.removeAttribute('aria-busy')}})});
-
-$$('[data-year]').forEach(el=>el.textContent=new Date().getFullYear());
-
-const revealGroups=['.trust-grid','.grid-2','.grid-3','.pricing-grid','.process','.feature-list','.faq-list','.footer-grid'];
-revealGroups.forEach(selector=>$$(selector).forEach(group=>[...group.children].forEach((item,index)=>{item.classList.add('reveal');item.style.setProperty('--reveal-delay',`${Math.min(index,5)*70}ms`)})));
-$$('.split').forEach(group=>[...group.children].forEach((item,index)=>{item.classList.add('reveal');item.style.setProperty('--reveal-delay',`${index*90}ms`)}));
-const observer='IntersectionObserver'in window?new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}}),{threshold:.08,rootMargin:'0px 0px -32px'}):null;
-$$('.reveal').forEach(el=>observer?observer.observe(el):el.classList.add('visible'));
+(() => {
+  const $$ = (selector, context = document) => [...context.querySelectorAll(selector)];
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  $$('[data-year]').forEach((element) => { element.textContent = new Date().getFullYear(); });
+  const selectors = ['.section-head','.trust-item','.card','.price-card','.step','.feature-line','.quote','.faq-item','.split > *','.footer-grid > *','.legal > section'];
+  $$(selectors.join(',')).forEach((element, index) => {
+    if (!element.hasAttribute('data-reveal')) element.dataset.reveal = 'up';
+    element.style.setProperty('--reveal-delay', `${Math.min(index % 4, 3) * 70}ms`);
+  });
+  if (!reduceMotion && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-revealed'); observer.unobserve(entry.target);
+    }), { threshold: .1, rootMargin: '0px 0px -36px' });
+    $$('[data-reveal]').forEach((element) => observer.observe(element));
+  } else $$('[data-reveal]').forEach((element) => element.classList.add('is-revealed'));
+  const visual = document.querySelector('.page-home .hero-media');
+  if (visual && !reduceMotion && matchMedia('(pointer:fine)').matches) {
+    let frame;
+    document.querySelector('.hero')?.addEventListener('pointermove', (event) => {
+      cancelAnimationFrame(frame); frame = requestAnimationFrame(() => {
+        visual.style.setProperty('--parallax-x', `${(event.clientX / innerWidth - .5) * 10}px`);
+        visual.style.setProperty('--parallax-y', `${(event.clientY / innerHeight - .5) * 8}px`);
+      });
+    });
+  }
+  const explorer = document.querySelector('[data-service-explorer]');
+  if (!explorer) return;
+  explorer.closest('section')?.classList.add('service-stage');
+  const panels = [...explorer.children]; const tabs = document.createElement('div');
+  tabs.className = 'service-tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Services');
+  const select = (index) => {
+    [...tabs.children].forEach((tab, itemIndex) => {
+      const active = itemIndex === index; tab.setAttribute('aria-selected', String(active)); tab.tabIndex = active ? 0 : -1;
+      panels[itemIndex].classList.toggle('is-active', active); panels[itemIndex].hidden = !active && innerWidth > 800;
+    });
+  };
+  panels.forEach((panel, index) => {
+    panel.id = `service-panel-${index}`; panel.setAttribute('role', 'tabpanel');
+    const tab = document.createElement('button'); tab.type = 'button'; tab.className = 'service-tab'; tab.id = `service-tab-${index}`;
+    tab.setAttribute('role', 'tab'); tab.setAttribute('aria-controls', panel.id);
+    tab.innerHTML = `<span>0${index + 1}</span><strong>${panel.querySelector('h3')?.textContent || `Service ${index + 1}`}</strong>`;
+    tab.addEventListener('click', () => select(index));
+    tab.addEventListener('keydown', (event) => {
+      if (!['ArrowDown','ArrowUp','Home','End'].includes(event.key)) return; event.preventDefault();
+      const next = event.key === 'Home' ? 0 : event.key === 'End' ? panels.length - 1 : event.key === 'ArrowDown' ? (index + 1) % panels.length : (index - 1 + panels.length) % panels.length;
+      tabs.children[next].focus(); select(next);
+    });
+    tabs.append(tab);
+  });
+  explorer.before(tabs); select(0);
+  addEventListener('resize', () => select([...tabs.children].findIndex((tab) => tab.getAttribute('aria-selected') === 'true')));
+})();

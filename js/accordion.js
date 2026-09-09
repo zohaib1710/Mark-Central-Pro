@@ -1,0 +1,1 @@
+(() => { document.querySelectorAll('.faq-button').forEach((button) => button.addEventListener('click', () => { const open = button.getAttribute('aria-expanded') === 'true'; button.setAttribute('aria-expanded', String(!open)); document.getElementById(button.getAttribute('aria-controls'))?.toggleAttribute('data-open', !open); })); })();

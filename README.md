@@ -1,6 +1,6 @@
-# Mark Central Pro — Phase 1 redesign
+# Mark Central Pro
 
-A premium static redesign of the Mark Central Pro marketing site. The generated site uses semantic HTML, compiled Tailwind CSS, vanilla JavaScript, local fonts, and optimized image assets. It requires no server runtime.
+Production-ready static website for Mark Central Pro. The ten HTML files in the project root are the canonical source and are edited directly; there is no HTML generator or application runtime.
 
 ## Local setup
 
@@ -12,46 +12,44 @@ npm run build
 npm run check
 ```
 
-For CSS watch mode, run `npm run dev`. The custom generator in `scripts/build.mjs` creates the ten HTML pages and shared interface markup. Tailwind compiles and minifies `css/input.css` into `dist/css/style.css`.
-
-For browser checks, serve `dist/` at `http://127.0.0.1:8000` and run `npm run check:visual`. This checks every page at the configured responsive widths plus the menu, dialog, disconnected form, and accordion interactions. Lighthouse is included as a development dependency for performance audits.
+`npm run build` only compiles and minifies `css/input.css` to `css/style.css`. Use `npm run dev` while editing styles. HTML and JavaScript do not require compilation.
 
 ## Project structure
 
-- `scripts/build.mjs`: page content, shared header/footer/modal, metadata, schema, sitemap, robots, and redirects
-- `css/input.css`: design tokens, Tailwind import, components, and responsive rules
-- `js/main.js`: navigation, dialog, accordion, validation, current year, and restrained reveals
-- `assets/`: local logo, generated hero artwork, optimized derivatives, social preview, favicon, and fonts
-- `docs/content-audit.md`: source inventory and required business/legal review
-- `dist/`: deployable output; upload its contents, not the folder itself
+- Root `*.html`: canonical page content, metadata, structured data, shared navigation, footer, and modal markup
+- `css/input.css`: Tailwind import, design tokens, components, page compositions, motion, and responsive rules
+- `css/style.css`: compiled production stylesheet
+- `js/`: small classic deferred scripts for navigation, accordions, forms, modal behavior, reveals, parallax, and service exploration
+- `assets/`: optimized local images, logo, favicon, and self-hosted fonts
+- `scripts/check.mjs`: lightweight static integrity check
+- `docs/content-audit.md`: internal content, claim, pricing, and legal review notes
+
+## Editing workflow
+
+1. Edit only the relevant root HTML page or shared CSS/JavaScript file.
+2. Run `npm run build` only when `css/input.css` changes.
+3. Run `npm run check` before deployment.
+4. Do not recreate HTML from templates or regenerate unrelated pages.
+
+Shared navigation, footer, and modal markup is intentionally present in each static page. When changing one of those shared interfaces, update all ten pages carefully and run the integrity check.
+
+## Design system
+
+Core colors are brand red `#E60023`, dark red `#B4001B`, navy `#0B1220`, white `#FFFFFF`, and soft gray `#F6F7F9`. Manrope is used for interface and body copy; Newsreader is reserved for editorial emphasis. Motion uses CSS transitions and IntersectionObserver and respects `prefers-reduced-motion`.
+
+The About hero uses the rights-safe local `about-founders-editorial` AVIF/WebP/PNG asset set. The homepage hero uses the local `hero-brand-protection` responsive asset set with code-native interface overlays.
+
+## Forms
+
+`window.submitLeadForm(formData)` in `js/forms.js` is the sole backend integration boundary. It is intentionally disconnected and must not perform network or storage operations until a backend is approved. Valid attempts retain entered data and show the direct phone/email fallback.
+
+Pricing appears directly in `index.html`, `trademark-registration.html`, and `copyright-registration.html`. Homepage and trademark-detail prices intentionally differ and remain listed in `docs/content-audit.md` for business review.
 
 ## Hostinger deployment
 
 1. Run `npm ci`, `npm run build`, and `npm run check` locally.
-2. Upload everything inside `dist/` to `public_html/`, including `.htaccess`.
-3. Confirm that hidden files are visible in the file manager and `.htaccess` was uploaded.
-4. Test every page, the PHP and extensionless redirects, mobile menu, service dropdown, accordions, and Get Started dialog.
-5. Confirm forms display the disconnected-backend notice and do not generate a network request.
+2. Upload the root HTML files, `.htaccess`, `robots.txt`, `sitemap.xml`, and the `css`, `js`, and `assets` directories to `public_html`.
+3. Do not upload Node, `node_modules`, `.tools`, `scripts`, or internal documentation.
+4. Confirm redirects, navigation, service dropdown, accordions, modal, and form failure state after deployment.
 
-Node and npm are build-time tools only. Nothing must be installed or executed on Hostinger.
-
-## Editing guide
-
-- Brand colors and spacing tokens are at the top of `css/input.css`.
-- Homepage and service-detail pricing live in `homePrices`, `trademarkPrices`, and the copyright page data in `scripts/build.mjs`.
-- Replace or add images under `assets/images/`; preserve explicit dimensions and generate WebP/AVIF variants.
-- Blog navigation is intentionally absent. The shared navigation generator is the integration point for Phase 2.
-
-## Form backend not connected
-
-The Get Started form and contact form validate only in the browser. They do not transmit or store personal information. `submitLeadForm(formData)` in `js/main.js` is the sole backend integration boundary and currently throws `FORM_BACKEND_NOT_CONNECTED` by design.
-
-When a backend is approved, connect it inside that function, add server-side validation, CSRF and abuse controls, rate limiting, logging/redaction, consent records, privacy updates, and an accessible success/error response. Do not connect a third-party form service without explicit approval.
-
-## Integrations withheld
-
-The source site’s Google Tag Manager (`GTM-N5P5SGND`), Google Analytics (`G-9KP5T3BG3C`), and Zendesk widget are documented but intentionally omitted. Obtain privacy and business approval before restoring them.
-
-## Pre-launch review
-
-Resolve every item in `docs/content-audit.md`, especially price inconsistencies, attorney/legal claims, testimonials, statistics, company naming, contact details, refund language, and legal text. The website is not ready for public lead collection until a secure backend and approved privacy disclosures are in place.
+Node and npm are development tools only. The deployed website needs no Node runtime. Blog pages remain outside the current site release.
