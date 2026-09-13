@@ -114,9 +114,14 @@
 <a class="btn btn-primary" href="#lead-modal" data-modal-trigger>Get Started</a>
 </aside>
 <main id="main-content">
-<section class="command-hero" aria-labelledby="home-title">
-  <div class="command-grid container">
-    <div class="command-copy" data-reveal="left">
+<section class="image-hero image-hero--home" aria-labelledby="home-title">
+  <picture class="image-hero__media" aria-hidden="true">
+    <source srcset="assets/images/hero-home-cinematic.avif" type="image/avif">
+    <source srcset="assets/images/hero-home-cinematic.webp" type="image/webp">
+    <img src="assets/images/hero-home-cinematic.jpg" width="1536" height="1024" alt="" fetchpriority="high" decoding="async">
+  </picture>
+  <div class="container image-hero__inner">
+    <div class="image-hero__content" data-reveal="left">
       <p class="eyebrow">Intellectual property protection</p>
       <h1 id="home-title"><span>Protect the identity</span><span>behind your ambition.</span></h1>
       <p class="lead">Guided trademark, copyright, and Amazon Brand Registry services for founders and businesses ready to protect what they are building.</p>
@@ -127,27 +132,6 @@
       <ul class="command-assurances" aria-label="Service advantages">
         <li>Clear service pricing</li><li>Guided online process</li><li>Responsive support</li>
       </ul>
-    </div>
-    <div class="command-stage" data-command-stage data-reveal="scale">
-      <div class="command-frame" aria-hidden="true"><span>Protection dossier</span><span>MCP / 001</span></div>
-      <div class="dossier-visual" data-depth="1">
-        <picture>
-          <source srcset="assets/images/hero-brand-protection.avif" type="image/avif">
-          <source srcset="assets/images/hero-brand-protection.webp" type="image/webp">
-          <img src="assets/images/hero-brand-protection.png" width="1672" height="909" alt="Premium registration documents secured with a red ribbon" fetchpriority="high">
-        </picture>
-      </div>
-      <div class="certificate-panel" data-depth="2" aria-hidden="true">
-        <div class="certificate-mark">M</div><span>Federal filing pathway</span><strong>Application prepared</strong>
-        <div class="certificate-rule"></div><small>Identity · Ownership · Protection</small>
-      </div>
-      <div class="command-status" data-depth="3"><div><span class="signal"></span><small>Protection status</small></div><strong>Ready to begin</strong></div>
-      <div class="filing-progress" data-depth="2" aria-hidden="true">
-        <div class="filing-progress-head"><span>Filing progress</span><strong>03 / 03</strong></div>
-        <div class="progress-track"><i></i></div>
-        <ol><li class="complete">Details</li><li class="complete">Prepare</li><li class="current">File</li></ol>
-      </div>
-      <div class="command-seal" data-depth="4" aria-hidden="true"><span>®</span><small>Brand<br>secured</small></div>
     </div>
   </div>
 </section>

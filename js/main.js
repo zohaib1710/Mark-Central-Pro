@@ -36,6 +36,56 @@
       visual.style.setProperty('--depth-x-inverse', '0px'); visual.style.setProperty('--depth-y-inverse', '0px');
     });
   }
+  $$('[data-command-tabs]').forEach((explorer, explorerIndex) => {
+    const panels = [...explorer.children].filter((child) => child.matches('article'));
+    if (panels.length < 2) return;
+    const tablist = document.createElement('div');
+    tablist.className = 'command-tab-list';
+    tablist.setAttribute('role', 'tablist');
+    tablist.setAttribute('aria-label', explorer.dataset.commandLabel || 'Explore options');
+    const select = (selectedIndex, moveFocus = false) => {
+      [...tablist.children].forEach((tab, index) => {
+        const selected = index === selectedIndex;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+        panels[index].classList.toggle('is-active', selected);
+        panels[index].hidden = !selected && innerWidth > 800;
+      });
+      if (moveFocus) tablist.children[selectedIndex]?.focus();
+    };
+    panels.forEach((panel, index) => {
+      const heading = panel.querySelector('h3');
+      const idBase = `command-${explorerIndex}-${index}`;
+      panel.id ||= `${idBase}-panel`;
+      panel.setAttribute('role', 'tabpanel');
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = 'command-tab';
+      tab.id = `${idBase}-tab`;
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', panel.id);
+      panel.setAttribute('aria-labelledby', tab.id);
+      tab.innerHTML = `<span>${String(index + 1).padStart(2, '0')}</span><strong>${heading?.textContent || `Option ${index + 1}`}</strong><i aria-hidden="true">→</i>`;
+      tab.addEventListener('click', () => select(index));
+      tab.addEventListener('keydown', (event) => {
+        const keys = ['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'];
+        if (!keys.includes(event.key)) return;
+        event.preventDefault();
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? panels.length - 1 :
+          ['ArrowDown', 'ArrowRight'].includes(event.key) ? (index + 1) % panels.length : (index - 1 + panels.length) % panels.length;
+        select(next, true);
+      });
+      tablist.append(tab);
+    });
+    explorer.before(tablist);
+    explorer.classList.add('command-tab-panels');
+    explorer.parentElement?.classList.add('command-tabs-ready');
+    select(0);
+    addEventListener('resize', () => {
+      const active = [...tablist.children].findIndex((tab) => tab.getAttribute('aria-selected') === 'true');
+      select(Math.max(active, 0));
+    });
+  });
   const explorer = document.querySelector('[data-service-explorer]');
   if (!explorer) return;
   explorer.closest('section')?.classList.add('service-stage');
