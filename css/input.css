@@ -562,3 +562,13 @@ html,body{overflow-x:clip}
   .amazon-conversion-next h2{font-size:2.85rem;line-height:1}
   .command-closing-panel .btn{min-height:58px}
 }
+
+/* Phone refinements: clearer header breathing room, About reading order, and Home art direction. */
+@media(max-width:560px){
+  .nav-shell{height:82px;padding-top:10px}
+  .site-header.is-scrolled .nav-shell{height:76px;padding-top:6px}
+  .image-hero--home{--hero-mobile-x:78%;--hero-mobile-y:50%}
+  .image-hero--home:before{background:linear-gradient(90deg,rgba(5,11,20,.97) 0%,rgba(5,11,20,.8) 50%,rgba(5,11,20,.2) 100%),linear-gradient(0deg,rgba(5,11,20,.82) 0%,rgba(5,11,20,.08) 72%)}
+  .page-about .command-method-layout{gap:40px}
+  .page-about .command-method-layout>div:last-child{order:-1}
+}
