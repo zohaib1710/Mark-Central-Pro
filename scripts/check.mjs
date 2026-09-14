@@ -1,10 +1,110 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 
-const root=path.resolve('.');const files=(await readdir(root)).filter(f=>f.endsWith('.html'));let failures=[];
-if(files.length!==10)failures.push(`Expected 10 HTML pages, found ${files.length}`);
-for(const file of files){const html=await readFile(path.join(root,file),'utf8');const h1=(html.match(/<h1\b/g)||[]).length;if(h1!==1)failures.push(`${file}: expected one H1, found ${h1}`);for(const token of ['<title>','name="description"','rel="canonical"','property="og:title"','application/ld+json','class="skip-link"','id="lead-modal"'])if(!html.includes(token))failures.push(`${file}: missing ${token}`);if(/type=["']password/i.test(html))failures.push(`${file}: contains a password input`);const ids=[...html.matchAll(/\sid="([^"]+)"/g)].map(match=>match[1]);const duplicates=ids.filter((id,index)=>ids.indexOf(id)!==index);if(duplicates.length)failures.push(`${file}: duplicate IDs ${[...new Set(duplicates)].join(', ')}`);for(const match of html.matchAll(/href="([^"#]+\.html)"/g)){if(/^https?:/.test(match[1]))continue;const target=path.join(root,match[1]);try{await stat(target)}catch{failures.push(`${file}: broken link ${match[1]}`)}}}
-for(const required of ['.htaccess','robots.txt','sitemap.xml','css/style.css'])try{await stat(path.join(root,required))}catch{failures.push(`Missing deployment file ${required}`)}
-const js=await readFile(path.join(root,'js','main.js'),'utf8');if(/fetch\(|XMLHttpRequest|localStorage|sessionStorage/.test(js))failures.push('Form script contains a network or storage API');
-if(failures.length){console.error(failures.join('\n'));process.exit(1)}
-console.log(`Checked ${files.length} root pages: metadata, headings, internal links, deployment files, modal shell, and disconnected forms look good.`);
+const root = path.resolve('.');
+const files = (await readdir(root)).filter(file => file.endsWith('.html'));
+const failures = [];
+
+if (files.length !== 10) failures.push(`Expected 10 HTML pages, found ${files.length}`);
+
+for (const file of files) {
+  const html = await readFile(path.join(root, file), 'utf8');
+  const h1Count = (html.match(/<h1\b/g) || []).length;
+  if (h1Count !== 1) failures.push(`${file}: expected one H1, found ${h1Count}`);
+
+  for (const token of [
+    '<title>', 'name="description"', 'rel="canonical"', 'property="og:title"',
+    'application/ld+json', 'class="skip-link"', 'id="lead-modal"',
+    'src="js/main.js?v=20260915-email1"',
+  ]) {
+    if (!html.includes(token)) failures.push(`${file}: missing ${token}`);
+  }
+
+  if (/type=["']password/i.test(html)) failures.push(`${file}: contains a password input`);
+
+  const leadForm = html.match(/<form class="dialog-form"[\s\S]*?<\/form>/)?.[0] || '';
+  for (const token of [
+    'action="send-form.php"', 'method="post"', 'enctype="multipart/form-data"',
+    'name="website"', 'name="form_started_at"', 'name="form_source" value="lead-modal"',
+    'name="source_page"', 'name="selected_service"', 'name="selected_package"',
+  ]) {
+    if (!leadForm.includes(token)) failures.push(`${file}: lead form missing ${token}`);
+  }
+
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
+  const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+  if (duplicates.length) failures.push(`${file}: duplicate IDs ${[...new Set(duplicates)].join(', ')}`);
+
+  for (const match of html.matchAll(/href="([^"#]+\.html)"/g)) {
+    if (/^https?:/.test(match[1])) continue;
+    try {
+      await stat(path.join(root, match[1]));
+    } catch {
+      failures.push(`${file}: broken link ${match[1]}`);
+    }
+  }
+}
+
+const contactHtml = await readFile(path.join(root, 'contact.html'), 'utf8');
+const contactForm = contactHtml.match(/<form class="form-card"[\s\S]*?<\/form>/)?.[0] || '';
+for (const token of [
+  'action="send-form.php"', 'method="post"', 'enctype="multipart/form-data"',
+  'name="website"', 'name="form_started_at"', 'name="form_source" value="contact-page"',
+  'name="source_page" value="/contact.html"',
+]) {
+  if (!contactForm.includes(token)) failures.push(`contact.html: contact form missing ${token}`);
+}
+
+for (const required of [
+  '.htaccess', 'robots.txt', 'sitemap.xml', 'css/style.css', 'send-form.php',
+  'smtp-config.example.php', 'lib/PHPMailer/LICENSE', 'lib/PHPMailer/src/Exception.php',
+  'lib/PHPMailer/src/PHPMailer.php', 'lib/PHPMailer/src/SMTP.php',
+]) {
+  try {
+    await stat(path.join(root, required));
+  } catch {
+    failures.push(`Missing deployment file ${required}`);
+  }
+}
+
+const js = await readFile(path.join(root, 'js', 'main.js'), 'utf8');
+for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()']) {
+  if (!js.includes(token)) failures.push(`Form script missing ${token}`);
+}
+
+const php = await readFile(path.join(root, 'send-form.php'), 'utf8');
+for (const token of [
+  'REQUEST_METHOD', 'MAX_REQUEST_BYTES', 'multipart/form-data', '$_FILES', 'HTTP_ORIGIN', 'HTTP_REFERER',
+  'form_started_at', 'MINIMUM_COMPLETION_SECONDS', "hash('sha256'", 'flock(',
+  'RATE_LIMIT_ATTEMPTS', 'RATE_LIMIT_WINDOW', "'lead-modal'", "'contact-page'",
+  'htmlspecialchars(', 'addReplyTo(', 'setFrom(', 'AltBody', 'dirname(__DIR__)',
+]) {
+  if (!php.includes(token)) failures.push(`PHP endpoint missing ${token}`);
+}
+if (/SMTPDebug\s*=\s*[1-9]/.test(php)) failures.push('PHP endpoint enables SMTP debug output');
+
+const config = await readFile(path.join(root, 'smtp-config.example.php'), 'utf8');
+const configKeys = [...config.matchAll(/^\s{4}'([^']+)'\s*=>/gm)].map(match => match[1]);
+const expectedConfigKeys = [
+  'smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_username', 'smtp_password',
+  'smtp_from_email', 'smtp_to_email', 'allowed_hosts',
+];
+if (JSON.stringify(configKeys) !== JSON.stringify(expectedConfigKeys)) {
+  failures.push(`SMTP example keys are not canonical: ${configKeys.join(', ')}`);
+}
+for (const token of [
+  "'smtp_host' => 'smtp.hostinger.com'", "'smtp_port' => 465", "'smtp_encryption' => 'smtps'",
+  "'smtp_username' => 'formsubmission@rbdtrading.com'", "'smtp_password' => 'YOUR_HOSTINGER_EMAIL_PASSWORD_HERE'",
+  "'smtp_from_email' => 'formsubmission@rbdtrading.com'", "'smtp_to_email' => 'xyedzohaibtirmizi@gmail.com'",
+  "'lightslategray-penguin-587111.hostingersite.com'", "'markcentralpro.com'", "'www.markcentralpro.com'",
+  "'localhost'", "'127.0.0.1'",
+]) {
+  if (!config.includes(token)) failures.push(`SMTP example missing ${token}`);
+}
+
+if (failures.length) {
+  console.error(failures.join('\n'));
+  process.exit(1);
+}
+
+console.log(`Checked ${files.length} pages: metadata, links, both email workflows, endpoint protections, PHPMailer, and canonical SMTP configuration look good.`);

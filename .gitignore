@@ -5,3 +5,6 @@ reports/
 .edge-mcp-*/
 mcp-*.png
 *.log
+**/smtp-config.php
+site-private/
+**/rate-limits/

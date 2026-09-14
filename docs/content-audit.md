@@ -65,9 +65,9 @@ The source Amazon form requested an Amazon-associated password and other sensiti
 
 ## Forms and third parties
 
-- Get Started and Contact forms are frontend-only and intentionally disconnected.
+- Get Started and Contact forms submit to a same-origin PHP endpoint using authenticated Hostinger SMTP.
 - Marketing consent is optional and unchecked.
-- No data is sent to email, storage, an API, Formspree, Google Sheets, analytics, or chat tools.
+- Form submissions are emailed to the configured private recipient. The endpoint stores only locked, hashed-IP rate-limit timestamps and does not persist submitted form content.
 - Source GTM `GTM-N5P5SGND`, Analytics `G-9KP5T3BG3C`, and Zendesk are withheld pending approval and privacy review.
 
 ## Blog and redirects
