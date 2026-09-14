@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 
 const executablePath='C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const browser=await chromium.launch({headless:true,executablePath});
-const pages=(await readdir('dist')).filter(file=>file.endsWith('.html'));
+const pages=(await readdir('.')).filter(file=>file.endsWith('.html'));
 const sizes=process.argv.length>2?process.argv.slice(2).map(Number):[320,375,390,430,768,1024,1280,1440,1920];
 const failures=[];
 
@@ -63,7 +63,7 @@ await page.click('.faq-button');
 if(await page.getAttribute('.faq-button','aria-expanded')!=='true')failures.push('FAQ did not expand');
 await page.waitForTimeout(350);
 if(await page.locator('.faq-panel').first().evaluate(el=>el.getBoundingClientRect().height)<20)failures.push('FAQ answer panel remained collapsed');
-await page.goto(pathToFileURL(resolve('dist/faq.html')).href);
+await page.goto(pathToFileURL(resolve('faq.html')).href);
 await page.click('.faq-button');
 if(await page.getAttribute('.faq-button','aria-expanded')!=='true')failures.push('FAQ did not expand from a local file');
 await page.waitForTimeout(350);

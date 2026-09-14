@@ -1,57 +1,55 @@
-# Mark Central Pro — Phase 1 redesign
+# Mark Central Pro website
 
-A premium static redesign of the Mark Central Pro marketing site. The generated site uses semantic HTML, compiled Tailwind CSS, vanilla JavaScript, local fonts, and optimized image assets. It requires no server runtime.
+A static Mark Central Pro marketing site built with semantic HTML, compiled Tailwind CSS, vanilla JavaScript, local fonts, and optimized local assets. It requires no server-side runtime.
 
 ## Local setup
 
 Install a current Node.js LTS release, then run:
 
 ```powershell
-npm install
+npm ci
 npm run build
 npm run check
 ```
 
-For CSS watch mode, run `npm run dev`. The custom generator in `scripts/build.mjs` creates the ten HTML pages and shared interface markup. Tailwind compiles and minifies `css/input.css` into `dist/css/style.css`.
-
-For browser checks, serve `dist/` at `http://127.0.0.1:8000` and run `npm run check:visual`. This checks every page at the configured responsive widths plus the menu, dialog, disconnected form, and accordion interactions. Lighthouse is included as a development dependency for performance audits.
+Use `npm run dev` to watch and recompile `css/input.css` into `css/style.css` while you work.
 
 ## Project structure
 
-- `scripts/build.mjs`: page content, shared header/footer/modal, metadata, schema, sitemap, robots, and redirects
-- `css/input.css`: design tokens, Tailwind import, components, and responsive rules
-- `js/main.js`: navigation, dialog, accordion, validation, current year, and restrained reveals
-- `assets/`: local logo, generated hero artwork, optimized derivatives, social preview, favicon, and fonts
-- `docs/content-audit.md`: source inventory and required business/legal review
-- `dist/`: deployable output; upload its contents, not the folder itself
+- Root `*.html` files: the ten directly editable website pages.
+- `.htaccess`, `robots.txt`, and `sitemap.xml`: deployment and search-engine files.
+- `css/input.css`: Tailwind source, design tokens, components, and responsive rules.
+- `css/style.css`: compiled production stylesheet.
+- `js/`: navigation, modal, accordion, form validation, current-year, and motion scripts.
+- `assets/`: local logo, images, fonts, social preview, and favicon assets.
+- `scripts/check.mjs`: static integrity check for the root site.
+- `scripts/visual-check.mjs`: optional browser interaction and responsive check.
+- `docs/content-audit.md`: source inventory and business/legal review notes.
+
+The root files are the single source of truth. Edit HTML, CSS, and JavaScript in place; `npm run build` only recompiles CSS.
 
 ## Hostinger deployment
 
 1. Run `npm ci`, `npm run build`, and `npm run check` locally.
-2. Upload everything inside `dist/` to `public_html/`, including `.htaccess`.
-3. Confirm that hidden files are visible in the file manager and `.htaccess` was uploaded.
-4. Test every page, the PHP and extensionless redirects, mobile menu, service dropdown, accordions, and Get Started dialog.
-5. Confirm forms display the disconnected-backend notice and do not generate a network request.
+2. Upload the root website files and folders directly into `public_html/`: the ten HTML files, `.htaccess`, `robots.txt`, `sitemap.xml`, `assets/`, `css/`, and `js/`.
+3. Confirm hidden files are enabled in Hostinger File Manager so `.htaccess` is uploaded.
+4. Test pages, legacy redirects, navigation, accordions, and the Get Started dialog after deployment.
 
-Node and npm are build-time tools only. Nothing must be installed or executed on Hostinger.
+Node and npm are local development tools only; Hostinger does not need a Node runtime.
 
 ## Editing guide
 
-- Brand colors and spacing tokens are at the top of `css/input.css`.
-- Homepage and service-detail pricing live in `homePrices`, `trademarkPrices`, and the copyright page data in `scripts/build.mjs`.
-- Replace or add images under `assets/images/`; preserve explicit dimensions and generate WebP/AVIF variants.
-- Blog navigation is intentionally absent. The shared navigation generator is the integration point for Phase 2.
+- Update the relevant root HTML page for page-specific content or layout changes.
+- Update `css/input.css` for shared styles, then run `npm run build`.
+- Update the relevant script in `js/` for interaction changes.
+- Replace assets under `assets/images/` while preserving dimensions and WebP/AVIF variants where supplied.
 
 ## Form backend not connected
 
-The Get Started form and contact form validate only in the browser. They do not transmit or store personal information. `submitLeadForm(formData)` in `js/main.js` is the sole backend integration boundary and currently throws `FORM_BACKEND_NOT_CONNECTED` by design.
+The Get Started and contact forms validate only in the browser. They do not transmit or store personal information. `submitLeadForm(formData)` in `js/main.js` is the only intended backend integration boundary and is currently disconnected.
 
-When a backend is approved, connect it inside that function, add server-side validation, CSRF and abuse controls, rate limiting, logging/redaction, consent records, privacy updates, and an accessible success/error response. Do not connect a third-party form service without explicit approval.
+When a backend is approved, connect it in that function and add server-side validation, CSRF and abuse controls, rate limiting, privacy updates, and accessible status handling.
 
-## Integrations withheld
+## Integrations and pre-launch review
 
-The source site’s Google Tag Manager (`GTM-N5P5SGND`), Google Analytics (`G-9KP5T3BG3C`), and Zendesk widget are documented but intentionally omitted. Obtain privacy and business approval before restoring them.
-
-## Pre-launch review
-
-Resolve every item in `docs/content-audit.md`, especially price inconsistencies, attorney/legal claims, testimonials, statistics, company naming, contact details, refund language, and legal text. The website is not ready for public lead collection until a secure backend and approved privacy disclosures are in place.
+Google Tag Manager, Google Analytics, and Zendesk remain omitted pending approval. Before public lead collection, resolve the open items in `docs/content-audit.md`, especially legal, pricing, testimonial, claim, company-name, contact, and refund-language reviews.
