@@ -119,3 +119,4 @@ h3{line-height:1.25}
 @media(max-width:800px){.nav-shell>.btn{display:none}}
 @media(max-width:800px){.mobile-panel{visibility:hidden;pointer-events:none;transition:transform .28s ease,visibility .28s ease}.mobile-panel.open{visibility:visible;pointer-events:auto}}
 @media(max-width:430px){.hero .actions{display:grid}.hero .actions .btn{width:100%}}
+@media(max-width:800px){.surface .split>div:first-child:has(.faq-list)+div{order:-1}}
