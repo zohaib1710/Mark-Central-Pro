@@ -15,7 +15,7 @@ for (const file of files) {
   for (const token of [
     '<title>', 'name="description"', 'rel="canonical"', 'property="og:title"',
     'application/ld+json', 'class="skip-link"', 'id="lead-modal"',
-    'href="css/style.css?v=20260916-sms1"', 'src="js/main.js?v=20260916-sms1"',
+    'href="css/style.css?v=20260916-sms1"', 'src="js/main.js?v=20260917-popup1"',
   ]) {
     if (!html.includes(token)) failures.push(`${file}: missing ${token}`);
   }
@@ -64,12 +64,12 @@ const homeHtml = await readFile(path.join(root, 'index.html'), 'utf8');
 if (homeHtml.includes('status-card') || homeHtml.includes('APPLICATION PATH')) failures.push('Homepage still contains the removed application-path card');
 for (const token of [
   'data-count-to="100000" data-count-suffix="+">100,000+',
-  'data-count-to="5" data-count-suffix="-star">5-star',
   'data-count-to="180" data-count-suffix="+">180+',
-  'data-count-to="3" data-count-suffix=" steps">3 steps',
+  '<strong>5-star</strong>', '<strong>3 steps</strong>',
 ]) {
   if (!homeHtml.includes(token)) failures.push(`Homepage statistic missing ${token}`);
 }
+if ((homeHtml.match(/data-count-to=/g) || []).length !== 2) failures.push('Homepage must contain exactly two animated statistics');
 
 const termsHtml = await readFile(path.join(root, 'terms-of-service.html'), 'utf8');
 for (const token of ['Last updated September 16, 2026', 'href="#legal-16">Text Messaging', 'href="#legal-17">Changes and contact', 'id="legal-16" class="sms-terms"', 'replying STOP', 'reply START', 'reply HELP']) {
@@ -89,14 +89,17 @@ for (const required of [
 }
 
 const js = await readFile(path.join(root, 'js', 'main.js'), 'utf8');
-for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()', "$$('[data-count-to]')", "new Intl.NumberFormat('en-US')", 'duration=5000', 'const startTime=performance.now()', 'const elapsed=now-startTime', 'Math.min(elapsed/duration,1)', 'Math.floor(target*progress)', "counter.textContent='0'", "counter.dataset.countState='waiting'", "closest('.stats-section')", "classList.add('is-visible')", 'currentScrollY>lastScrollY', 'bounds.top<window.innerHeight&&bounds.bottom>0', "window.addEventListener('scroll',onStatsScroll,{passive:true})", "window.removeEventListener('scroll',onStatsScroll)", 'requestAnimationFrame(update)', 'else showFinalValues()']) {
+for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()', 'const AUTO_OPEN_DELAY=20000', 'function cancelAutoOpen()', 'openModal(null,true)', 'trigger?.dataset.service', 'trigger?.dataset.package', 'cancelAutoOpen();form.reset()', "$$('[data-count-to]')", "new Intl.NumberFormat('en-US')", 'duration=5000', 'const startTime=performance.now()', 'const elapsed=now-startTime', 'Math.min(elapsed/duration,1)', 'Math.floor(target*progress)', "counter.textContent='0'", "counter.dataset.countState='waiting'", "const statsSection=$('.stats-section')", "classList.add('is-visible')", 'startCounters()', 'observer.observe(statsSection)', 'requestAnimationFrame(update)', 'else showFinalValues()']) {
   if (!js.includes(token)) failures.push(`Form script missing ${token}`);
 }
-for (const forbidden of ['triggerPosition', 'onCounterScroll', 'counterObserver', "window.addEventListener('resize'", 'if(reduceMotion)', 'Math.round(target*progress)']) {
+for (const forbidden of ['triggerPosition', 'onCounterScroll', 'counterObserver', 'onStatsScroll', 'lastScrollY', 'getBoundingClientRect()', 'window.innerHeight', "window.addEventListener('scroll'", "window.addEventListener('resize'", 'if(reduceMotion)', 'Math.round(target*progress)', 'data-count-to="5"', 'data-count-to="3"']) {
   if (js.includes(forbidden)) failures.push(`Counter script still contains obsolete trigger ${forbidden}`);
 }
 for (const debugMessage of ['COUNTER SCRIPT LOADED', 'COUNTER INITIALIZED', 'COUNTER ENTRANCE TRIGGERED', 'COUNTER ANIMATION STARTED']) {
   if (js.includes(debugMessage)) failures.push(`Temporary counter debug logging remains: ${debugMessage}`);
+}
+for (const forbidden of ['sessionStorage', 'localStorage']) {
+  if (js.includes(forbidden)) failures.push(`Automatic modal must not persist through ${forbidden}`);
 }
 if (js.includes("const revealGroups=['.trust-grid'")) failures.push('Stats grid is still controlled by the generic reveal observer');
 
