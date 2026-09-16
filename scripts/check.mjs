@@ -15,7 +15,7 @@ for (const file of files) {
   for (const token of [
     '<title>', 'name="description"', 'rel="canonical"', 'property="og:title"',
     'application/ld+json', 'class="skip-link"', 'id="lead-modal"',
-    'href="css/style.css?v=20260916-stats1"', 'src="js/main.js?v=20260916-home6"',
+    'href="css/style.css?v=20260916-sms1"', 'src="js/main.js?v=20260916-sms1"',
   ]) {
     if (!html.includes(token)) failures.push(`${file}: missing ${token}`);
   }
@@ -27,6 +27,8 @@ for (const file of files) {
     'action="send-form.php"', 'method="post"', 'enctype="multipart/form-data"',
     'name="website"', 'name="form_started_at"', 'name="form_source" value="lead-modal"',
     'name="source_page"', 'name="selected_service"', 'name="selected_package"',
+    'id="lead-sms-consent" type="checkbox" name="marketing_consent" value="yes" required',
+    'id="lead-sms-consent-error"', 'href="privacy-policy.html"', 'href="terms-of-service.html"',
   ]) {
     if (!leadForm.includes(token)) failures.push(`${file}: lead form missing ${token}`);
   }
@@ -51,6 +53,9 @@ for (const token of [
   'action="send-form.php"', 'method="post"', 'enctype="multipart/form-data"',
   'name="website"', 'name="form_started_at"', 'name="form_source" value="contact-page"',
   'name="source_page" value="/contact.html"',
+  'id="contact-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" pattern="[+()0-9\\s-]{7,20}" required',
+  'id="contact-sms-consent" type="checkbox" name="marketing_consent" value="yes" required',
+  'id="contact-sms-consent-error"', 'href="privacy-policy.html"', 'href="terms-of-service.html"',
 ]) {
   if (!contactForm.includes(token)) failures.push(`contact.html: contact form missing ${token}`);
 }
@@ -64,6 +69,11 @@ for (const token of [
   'data-count-to="3" data-count-suffix=" steps">3 steps',
 ]) {
   if (!homeHtml.includes(token)) failures.push(`Homepage statistic missing ${token}`);
+}
+
+const termsHtml = await readFile(path.join(root, 'terms-of-service.html'), 'utf8');
+for (const token of ['Last updated September 16, 2026', 'href="#legal-16">Text Messaging', 'href="#legal-17">Changes and contact', 'id="legal-16" class="sms-terms"', 'replying STOP', 'reply START', 'reply HELP']) {
+  if (!termsHtml.includes(token)) failures.push(`Terms of Service missing ${token}`);
 }
 
 for (const required of [
@@ -103,6 +113,7 @@ for (const token of [
   'REQUEST_METHOD', 'MAX_REQUEST_BYTES', 'multipart/form-data', '$_FILES', 'HTTP_ORIGIN', 'HTTP_REFERER',
   'form_started_at', 'MINIMUM_COMPLETION_SECONDS', "hash('sha256'", 'flock(',
   'RATE_LIMIT_ATTEMPTS', 'RATE_LIMIT_WINDOW', "'lead-modal'", "'contact-page'",
+  "$consent !== 'yes'", "'SMS consent' => 'Yes'",
   'htmlspecialchars(', 'addReplyTo(', 'setFrom(', 'AltBody', 'dirname(__DIR__)',
 ]) {
   if (!php.includes(token)) failures.push(`PHP endpoint missing ${token}`);

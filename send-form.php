@@ -208,7 +208,7 @@ if (!array_key_exists($formSource, $sourceLabels)) {
 
 $allowedFields = $formSource === 'lead-modal'
     ? ['name', 'email', 'phone', 'business_description', 'marketing_consent', 'selected_service', 'selected_package', 'website', 'form_started_at', 'form_source', 'source_page']
-    : ['name', 'email', 'phone', 'message', 'website', 'form_started_at', 'form_source', 'source_page'];
+    : ['name', 'email', 'phone', 'message', 'marketing_consent', 'website', 'form_started_at', 'form_source', 'source_page'];
 if (array_diff(array_keys($_POST), $allowedFields) !== []) {
     respond(422, false, 'Please check the form fields and try again.');
 }
@@ -244,6 +244,7 @@ $name = trim((string) ($_POST['name'] ?? ''));
 $email = trim((string) ($_POST['email'] ?? ''));
 $phone = preg_replace('/\s+/', ' ', trim((string) ($_POST['phone'] ?? '')));
 $phone = is_string($phone) ? $phone : '';
+$consent = trim((string) ($_POST['marketing_consent'] ?? ''));
 
 if (text_length($name) < 2 || text_length($name) > 100 || contains_forbidden_controls($name)) {
     respond(422, false, 'Please enter a valid name.');
@@ -254,28 +255,25 @@ if (text_length($email) > 254 || preg_match('/[\r\n]/', $email) === 1 ||
 }
 
 $phoneDigits = preg_replace('/\D+/', '', $phone);
-$phoneRequired = $formSource === 'lead-modal';
-if (($phoneRequired && $phone === '') || ($phone !== '' && (
+if ($phone === '' || (
     text_length($phone) > 20 || preg_match('/^[+()\-\s\d]{7,20}$/', $phone) !== 1 ||
     !is_string($phoneDigits) || strlen($phoneDigits) < 7 || strlen($phoneDigits) > 15
-))) {
+)) {
     respond(422, false, 'Please enter a valid phone number.');
+}
+if ($consent !== 'yes') {
+    respond(422, false, 'You must agree to receive SMS messages to submit this form.');
 }
 
 $details = [];
 if ($formSource === 'lead-modal') {
     $description = trim((string) ($_POST['business_description'] ?? ''));
-    $consent = trim((string) ($_POST['marketing_consent'] ?? ''));
     $service = trim((string) ($_POST['selected_service'] ?? ''));
     $package = trim((string) ($_POST['selected_package'] ?? ''));
 
     if ($description === '' || text_length($description) > 2000 || contains_forbidden_controls($description)) {
         respond(422, false, 'Please enter a valid business description of 2,000 characters or fewer.');
     }
-    if (!in_array($consent, ['', 'yes'], true)) {
-        respond(422, false, 'Please check the marketing consent field and try again.');
-    }
-
     $validSelections = [
         '|' ,
         'trademark|Basic', 'trademark|Professional', 'trademark|Premium',
@@ -291,14 +289,14 @@ if ($formSource === 'lead-modal') {
         'Business description' => $description,
         'Selected service' => $service !== '' ? $service : 'Not specified',
         'Selected package' => $package !== '' ? $package : 'Not specified',
-        'Marketing consent' => $consent === 'yes' ? 'Yes' : 'No',
+        'SMS consent' => 'Yes',
     ];
 } else {
     $message = trim((string) ($_POST['message'] ?? ''));
     if ($message === '' || text_length($message) > 3000 || contains_forbidden_controls($message)) {
         respond(422, false, 'Please enter a valid message of 3,000 characters or fewer.');
     }
-    $details = ['Message' => $message];
+    $details = ['Message' => $message, 'SMS consent' => 'Yes'];
 }
 
 $sourceLabel = $sourceLabels[$formSource];
