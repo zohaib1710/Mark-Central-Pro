@@ -15,7 +15,7 @@ for (const file of files) {
   for (const token of [
     '<title>', 'name="description"', 'rel="canonical"', 'property="og:title"',
     'application/ld+json', 'class="skip-link"', 'id="lead-modal"',
-    'href="css/style.css?v=20260916-stats1"', 'src="js/main.js?v=20260916-home5"',
+    'href="css/style.css?v=20260916-stats1"', 'src="js/main.js?v=20260916-home6"',
   ]) {
     if (!html.includes(token)) failures.push(`${file}: missing ${token}`);
   }
@@ -79,10 +79,10 @@ for (const required of [
 }
 
 const js = await readFile(path.join(root, 'js', 'main.js'), 'utf8');
-for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()', "$$('[data-count-to]')", "new Intl.NumberFormat('en-US')", "prefers-reduced-motion: reduce", 'duration=5000', "counter.textContent='0'", "counter.dataset.countState='waiting'", "closest('.stats-section')", "classList.add('is-visible')", 'currentScrollY>lastScrollY', 'bounds.top<window.innerHeight&&bounds.bottom>0', "window.addEventListener('scroll',onStatsScroll,{passive:true})", "window.removeEventListener('scroll',onStatsScroll)", 'requestAnimationFrame(update)']) {
+for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()', "$$('[data-count-to]')", "new Intl.NumberFormat('en-US')", 'duration=5000', 'const startTime=performance.now()', 'const elapsed=now-startTime', 'Math.min(elapsed/duration,1)', 'Math.floor(target*progress)', "counter.textContent='0'", "counter.dataset.countState='waiting'", "closest('.stats-section')", "classList.add('is-visible')", 'currentScrollY>lastScrollY', 'bounds.top<window.innerHeight&&bounds.bottom>0', "window.addEventListener('scroll',onStatsScroll,{passive:true})", "window.removeEventListener('scroll',onStatsScroll)", 'requestAnimationFrame(update)', 'else showFinalValues()']) {
   if (!js.includes(token)) failures.push(`Form script missing ${token}`);
 }
-for (const forbidden of ['triggerPosition', 'onCounterScroll', 'counterObserver', "window.addEventListener('resize'"]) {
+for (const forbidden of ['triggerPosition', 'onCounterScroll', 'counterObserver', "window.addEventListener('resize'", 'if(reduceMotion)', 'Math.round(target*progress)']) {
   if (js.includes(forbidden)) failures.push(`Counter script still contains obsolete trigger ${forbidden}`);
 }
 for (const debugMessage of ['COUNTER SCRIPT LOADED', 'COUNTER INITIALIZED', 'COUNTER ENTRANCE TRIGGERED', 'COUNTER ANIMATION STARTED']) {

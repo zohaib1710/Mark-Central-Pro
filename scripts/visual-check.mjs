@@ -26,8 +26,8 @@ for(const width of sizes){
       if(homeState.visible||homeState.stats.join('|')!=='0|0|0|0')failures.push(`Reduced-motion counters did not wait for entrance at ${width}px: ${homeState.stats.join('|')}`);
       await page.evaluate(()=>document.querySelector('.stats-section').scrollIntoView({block:'center'}));
       await page.waitForTimeout(50);
-      const reducedAfterEntrance=await page.locator('[data-count-to]').allTextContents();
-      if(reducedAfterEntrance.join('|')!=='100,000+|5-star|180+|3 steps')failures.push(`Reduced-motion counters did not finish on entrance at ${width}px: ${reducedAfterEntrance.join('|')}`);
+      const reducedAfterEntrance=await page.evaluate(()=>[...document.querySelectorAll('[data-count-to]')].map(el=>({text:el.textContent,state:el.dataset.countState})));
+      if(reducedAfterEntrance.some(counter=>counter.state!=='running')||reducedAfterEntrance.map(counter=>counter.text).join('|')==='100,000+|5-star|180+|3 steps')failures.push(`Reduced-motion counters bypassed count-up at ${width}px: ${reducedAfterEntrance.map(counter=>counter.text).join('|')}`);
     }
     if(errors.length)failures.push(`${file} at ${width}px console: ${errors.join('; ')}`);
   }
@@ -42,14 +42,25 @@ if(counterStart.length!==4||counterStart.some(counter=>counter.state!=='waiting'
 await desktopPage.waitForTimeout(10000);
 const counterAfterWait=await desktopPage.evaluate(()=>({scrollY:window.scrollY,stats:[...document.querySelectorAll('[data-count-to]')].map(el=>({text:el.textContent,state:el.dataset.countState}))}));
 if(counterAfterWait.scrollY!==0||counterAfterWait.stats.some(counter=>counter.state!=='waiting'||counter.text!=='0'))failures.push('Homepage counters started without a user scroll');
+await desktopPage.evaluate(()=>{window.__counterSamples=[...document.querySelectorAll('[data-count-to]')].map(el=>[el.textContent]);[...document.querySelectorAll('[data-count-to]')].forEach((el,index)=>new MutationObserver(()=>window.__counterSamples[index].push(el.textContent)).observe(el,{childList:true,characterData:true,subtree:true}))});
 await desktopPage.evaluate(()=>window.scrollBy(0,1));
 await desktopPage.waitForFunction(()=>[...document.querySelectorAll('[data-count-to]')].every(el=>el.dataset.countState==='running'));
-await desktopPage.waitForTimeout(2450);
-const counterMiddle=await desktopPage.evaluate(()=>[...document.querySelectorAll('[data-count-to]')].map(el=>({value:Number(el.textContent.replace(/\D/g,'')),target:Number(el.dataset.countTo),state:el.dataset.countState,text:el.textContent})));
-if(counterMiddle.some(counter=>counter.state!=='running'||counter.value<=0||counter.value>=counter.target))failures.push(`Homepage counters were not actively progressing at midpoint: ${counterMiddle.map(counter=>counter.text).join('|')}`);
+const readAnimatedValues=()=>desktopPage.evaluate(()=>[...document.querySelectorAll('[data-count-to]')].map(el=>Number(el.textContent.replace(/\D/g,''))));
+const timedSamples=[];
+timedSamples.push({time:0,values:await readAnimatedValues()});
+await desktopPage.waitForTimeout(1000);timedSamples.push({time:1,values:await readAnimatedValues()});
+await desktopPage.waitForTimeout(1000);timedSamples.push({time:2,values:await readAnimatedValues()});
+await desktopPage.waitForTimeout(500);timedSamples.push({time:2.5,values:await readAnimatedValues()});
+await desktopPage.waitForTimeout(1500);timedSamples.push({time:4,values:await readAnimatedValues()});
+const expectedRatios=[0,.2,.4,.5,.8];
+timedSamples.forEach((sample,index)=>{for(const counterIndex of [0,2]){const target=counterIndex===0?100000:180;const ratio=sample.values[counterIndex]/target;if(Math.abs(ratio-expectedRatios[index])>.08)failures.push(`Counter ${counterIndex} was off linear pace at ${sample.time}s: ${sample.values[counterIndex]}`)}});
 await desktopPage.waitForFunction(()=>[...document.querySelectorAll('[data-count-to]')].every(el=>el.dataset.countState==='complete'));
 const counterFinal=await desktopPage.locator('[data-count-to]').allTextContents();
 if(counterFinal.join('|')!=='100,000+|5-star|180+|3 steps')failures.push(`Homepage counters ended with incorrect values: ${counterFinal.join('|')}`);
+const animationSamples=await desktopPage.evaluate(()=>window.__counterSamples.map(values=>[...new Set(values.map(value=>Number(value.replace(/\D/g,''))))]));
+if(animationSamples[0].length<100||animationSamples[2].length<100)failures.push(`Large counters did not produce enough intermediate values: ${animationSamples[0].length}, ${animationSamples[2].length}`);
+if(![0,1,2,3,4,5].every(value=>animationSamples[1].includes(value)))failures.push(`Rating counter skipped an integer stage: ${animationSamples[1].join(',')}`);
+if(![0,1,2,3].every(value=>animationSamples[3].includes(value)))failures.push(`Steps counter skipped an integer stage: ${animationSamples[3].join(',')}`);
 await desktopPage.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
 await desktopPage.waitForTimeout(150);
 await desktopPage.evaluate(()=>document.querySelector('.trust-strip').scrollIntoView({block:'center'}));
