@@ -15,7 +15,7 @@ for (const file of files) {
   for (const token of [
     '<title>', 'name="description"', 'rel="canonical"', 'property="og:title"',
     'application/ld+json', 'class="skip-link"', 'id="lead-modal"',
-    'src="js/main.js?v=20260915-email1"',
+    'href="css/style.css?v=20260916-stats1"', 'src="js/main.js?v=20260916-home5"',
   ]) {
     if (!html.includes(token)) failures.push(`${file}: missing ${token}`);
   }
@@ -55,6 +55,17 @@ for (const token of [
   if (!contactForm.includes(token)) failures.push(`contact.html: contact form missing ${token}`);
 }
 
+const homeHtml = await readFile(path.join(root, 'index.html'), 'utf8');
+if (homeHtml.includes('status-card') || homeHtml.includes('APPLICATION PATH')) failures.push('Homepage still contains the removed application-path card');
+for (const token of [
+  'data-count-to="100000" data-count-suffix="+">100,000+',
+  'data-count-to="5" data-count-suffix="-star">5-star',
+  'data-count-to="180" data-count-suffix="+">180+',
+  'data-count-to="3" data-count-suffix=" steps">3 steps',
+]) {
+  if (!homeHtml.includes(token)) failures.push(`Homepage statistic missing ${token}`);
+}
+
 for (const required of [
   '.htaccess', 'robots.txt', 'sitemap.xml', 'css/style.css', 'send-form.php',
   'smtp-config.example.php', 'lib/PHPMailer/LICENSE', 'lib/PHPMailer/src/Exception.php',
@@ -68,8 +79,23 @@ for (const required of [
 }
 
 const js = await readFile(path.join(root, 'js', 'main.js'), 'utf8');
-for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()']) {
+for (const token of ['fetch(', 'new FormData(form)', "credentials:'same-origin'", "form.dataset.submitting==='true'", 'setFormStartedAt(form)', 'form.reset()', "$$('[data-count-to]')", "new Intl.NumberFormat('en-US')", "prefers-reduced-motion: reduce", 'duration=5000', "counter.textContent='0'", "counter.dataset.countState='waiting'", "closest('.stats-section')", "classList.add('is-visible')", 'currentScrollY>lastScrollY', 'bounds.top<window.innerHeight&&bounds.bottom>0', "window.addEventListener('scroll',onStatsScroll,{passive:true})", "window.removeEventListener('scroll',onStatsScroll)", 'requestAnimationFrame(update)']) {
   if (!js.includes(token)) failures.push(`Form script missing ${token}`);
+}
+for (const forbidden of ['triggerPosition', 'onCounterScroll', 'counterObserver', "window.addEventListener('resize'"]) {
+  if (js.includes(forbidden)) failures.push(`Counter script still contains obsolete trigger ${forbidden}`);
+}
+for (const debugMessage of ['COUNTER SCRIPT LOADED', 'COUNTER INITIALIZED', 'COUNTER ENTRANCE TRIGGERED', 'COUNTER ANIMATION STARTED']) {
+  if (js.includes(debugMessage)) failures.push(`Temporary counter debug logging remains: ${debugMessage}`);
+}
+if (js.includes("const revealGroups=['.trust-grid'")) failures.push('Stats grid is still controlled by the generic reveal observer');
+
+const css = await readFile(path.join(root, 'css', 'input.css'), 'utf8');
+for (const token of ['status-card', 'status-top', 'status-row', 'status-pill']) {
+  if (css.includes(token)) failures.push(`Stylesheet still contains obsolete ${token} rules`);
+}
+for (const token of ['.stats-section:not(.is-visible) .trust-grid', 'translateY(15px)', '.stats-section.is-visible .trust-grid']) {
+  if (!css.includes(token)) failures.push(`Stats entrance style missing ${token}`);
 }
 
 const php = await readFile(path.join(root, 'send-form.php'), 'utf8');

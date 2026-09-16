@@ -20,14 +20,45 @@ for(const width of sizes){
     const metrics=await page.evaluate(()=>({scrollWidth:document.documentElement.scrollWidth,clientWidth:document.documentElement.clientWidth,h1:document.querySelectorAll('h1').length}));
     if(metrics.scrollWidth>metrics.clientWidth+1)failures.push(`${file} at ${width}px overflows by ${metrics.scrollWidth-metrics.clientWidth}px`);
     if(metrics.h1!==1)failures.push(`${file} at ${width}px has ${metrics.h1} H1 elements`);
+    if(file==='index.html'){
+      const homeState=await page.evaluate(()=>({card:document.querySelectorAll('.status-card').length,stats:[...document.querySelectorAll('[data-count-to]')].map(el=>el.textContent),visible:document.querySelector('.stats-section')?.classList.contains('is-visible')}));
+      if(homeState.card)failures.push(`Homepage status card remains at ${width}px`);
+      if(homeState.visible||homeState.stats.join('|')!=='0|0|0|0')failures.push(`Reduced-motion counters did not wait for entrance at ${width}px: ${homeState.stats.join('|')}`);
+      await page.evaluate(()=>document.querySelector('.stats-section').scrollIntoView({block:'center'}));
+      await page.waitForTimeout(50);
+      const reducedAfterEntrance=await page.locator('[data-count-to]').allTextContents();
+      if(reducedAfterEntrance.join('|')!=='100,000+|5-star|180+|3 steps')failures.push(`Reduced-motion counters did not finish on entrance at ${width}px: ${reducedAfterEntrance.join('|')}`);
+    }
     if(errors.length)failures.push(`${file} at ${width}px console: ${errors.join('; ')}`);
   }
   await context.close();
 }
 
-const desktop=await browser.newContext({viewport:{width:1440,height:900}});
+const desktop=await browser.newContext({viewport:{width:1440,height:1080}});
 const desktopPage=await desktop.newPage();
 await desktopPage.goto('http://127.0.0.1:8000/index.html');
+const counterStart=await desktopPage.evaluate(()=>[...document.querySelectorAll('[data-count-to]')].map(el=>({text:el.textContent,state:el.dataset.countState})));
+if(counterStart.length!==4||counterStart.some(counter=>counter.state!=='waiting'||counter.text!=='0'))failures.push('Homepage counters did not initialize at literal zero');
+await desktopPage.waitForTimeout(10000);
+const counterAfterWait=await desktopPage.evaluate(()=>({scrollY:window.scrollY,stats:[...document.querySelectorAll('[data-count-to]')].map(el=>({text:el.textContent,state:el.dataset.countState}))}));
+if(counterAfterWait.scrollY!==0||counterAfterWait.stats.some(counter=>counter.state!=='waiting'||counter.text!=='0'))failures.push('Homepage counters started without a user scroll');
+await desktopPage.evaluate(()=>window.scrollBy(0,1));
+await desktopPage.waitForFunction(()=>[...document.querySelectorAll('[data-count-to]')].every(el=>el.dataset.countState==='running'));
+await desktopPage.waitForTimeout(2450);
+const counterMiddle=await desktopPage.evaluate(()=>[...document.querySelectorAll('[data-count-to]')].map(el=>({value:Number(el.textContent.replace(/\D/g,'')),target:Number(el.dataset.countTo),state:el.dataset.countState,text:el.textContent})));
+if(counterMiddle.some(counter=>counter.state!=='running'||counter.value<=0||counter.value>=counter.target))failures.push(`Homepage counters were not actively progressing at midpoint: ${counterMiddle.map(counter=>counter.text).join('|')}`);
+await desktopPage.waitForFunction(()=>[...document.querySelectorAll('[data-count-to]')].every(el=>el.dataset.countState==='complete'));
+const counterFinal=await desktopPage.locator('[data-count-to]').allTextContents();
+if(counterFinal.join('|')!=='100,000+|5-star|180+|3 steps')failures.push(`Homepage counters ended with incorrect values: ${counterFinal.join('|')}`);
+await desktopPage.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+await desktopPage.waitForTimeout(150);
+await desktopPage.evaluate(()=>document.querySelector('.trust-strip').scrollIntoView({block:'center'}));
+await desktopPage.waitForTimeout(150);
+const counterReturn=await desktopPage.evaluate(()=>[...document.querySelectorAll('[data-count-to]')].map(el=>({text:el.textContent,state:el.dataset.countState})));
+if(counterReturn.some(counter=>counter.state!=='complete')||counterReturn.map(counter=>counter.text).join('|')!=='100,000+|5-star|180+|3 steps')failures.push('Homepage counters restarted after returning to the stats strip');
+await desktopPage.reload({waitUntil:'domcontentloaded'});
+const counterReload=await desktopPage.evaluate(()=>({scrollY:window.scrollY,stats:[...document.querySelectorAll('[data-count-to]')].map(el=>({text:el.textContent,state:el.dataset.countState}))}));
+if(counterReload.stats.some(counter=>counter.state!=='waiting'||counter.text!=='0'))failures.push(`Homepage counters did not reset after reload at scrollY ${counterReload.scrollY}`);
 const polish=await desktopPage.evaluate(()=>{const logo=document.querySelector('.footer-brand img');const caption=document.querySelector('.quote figcaption');return{logoFilter:getComputedStyle(logo).filter,logoWidth:logo.getBoundingClientRect().width,captionDirection:getComputedStyle(caption).flexDirection}});
 if(polish.logoFilter!=='none'||polish.logoWidth<150)failures.push('Footer logo styling is not visible at desktop size');
 if(polish.captionDirection!=='column')failures.push('Testimonial attribution is not stacked');
@@ -36,6 +67,19 @@ await animated.scrollIntoViewIfNeeded();
 await desktopPage.waitForTimeout(800);
 if(Number(await animated.evaluate(el=>getComputedStyle(el).opacity))<.9)failures.push('Entrance animation did not reveal content');
 await desktop.close();
+
+const directionContext=await browser.newContext({viewport:{width:1440,height:700}});
+const directionPage=await directionContext.newPage();
+await directionPage.goto('http://127.0.0.1:8000/index.html');
+await directionPage.evaluate(()=>window.scrollTo(0,40));
+await directionPage.waitForTimeout(100);
+await directionPage.evaluate(()=>window.scrollTo(0,20));
+await directionPage.waitForTimeout(100);
+const directionWaiting=await directionPage.evaluate(()=>({visible:document.querySelector('.stats-section').classList.contains('is-visible'),stats:[...document.querySelectorAll('[data-count-to]')].map(el=>el.textContent)}));
+if(directionWaiting.visible||directionWaiting.stats.join('|')!=='0|0|0|0')failures.push('Stats entrance triggered before the section was reached or while scrolling upward');
+await directionPage.evaluate(()=>window.scrollTo(0,100));
+await directionPage.waitForFunction(()=>document.querySelector('.stats-section').classList.contains('is-visible'));
+await directionContext.close();
 
 const context=await browser.newContext({viewport:{width:390,height:850}});
 const page=await context.newPage();
