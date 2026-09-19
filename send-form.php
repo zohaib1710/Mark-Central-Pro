@@ -214,8 +214,9 @@ if (array_diff(array_keys($_POST), $allowedFields) !== []) {
 }
 
 $allowedPages = [
-    '/', '/index.html', '/about.html', '/services.html', '/trademark-registration.html',
-    '/copyright-registration.html', '/amazon-brand-registry.html', '/contact.html',
+    '/', '/index.html', '/about.html', '/services.html', '/business-registration.html',
+    '/ein-registration.html', '/trademark-registration.html', '/copyright-registration.html',
+    '/amazon-brand-registry.html', '/contact.html',
     '/faq.html', '/privacy-policy.html', '/terms-of-service.html',
 ];
 $sourcePage = trim((string) ($_POST['source_page'] ?? ''));
@@ -279,6 +280,7 @@ if ($formSource === 'lead-modal') {
         'trademark|Basic', 'trademark|Professional', 'trademark|Premium',
         'trademark|Trademark Basic', 'trademark|Trademark Standard', 'trademark|Trademark Deluxe',
         'copyright|Copyright Basic', 'copyright|Copyright Deluxe',
+        'Business Registration|', 'EIN Registration|',
         'Amazon Brand Registry|',
     ];
     if (!in_array($service . '|' . $package, $validSelections, true)) {

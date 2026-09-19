@@ -2,6 +2,8 @@ Options -MultiViews
 RewriteEngine On
 RewriteRule ^about(?:\.php)?/?$ /about.html [R=301,L]
 RewriteRule ^services(?:\.php)?/?$ /services.html [R=301,L]
+RewriteRule ^business-registration(?:\.php)?/?$ /business-registration.html [R=301,L]
+RewriteRule ^ein-registration(?:\.php)?/?$ /ein-registration.html [R=301,L]
 RewriteRule ^contact(?:\.php)?/?$ /contact.html [R=301,L]
 RewriteRule ^frequently-asked-question(?:\.php)?/?$ /faq.html [R=301,L]
 RewriteRule ^trademark-registration-detail(?:\.php)?/?$ /trademark-registration.html [R=301,L]

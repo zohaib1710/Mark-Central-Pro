@@ -5,7 +5,7 @@ const root = path.resolve('.');
 const files = (await readdir(root)).filter(file => file.endsWith('.html'));
 const failures = [];
 
-if (files.length !== 10) failures.push(`Expected 10 HTML pages, found ${files.length}`);
+if (files.length !== 12) failures.push(`Expected 12 HTML pages, found ${files.length}`);
 
 for (const file of files) {
   const html = await readFile(path.join(root, file), 'utf8');
@@ -28,9 +28,12 @@ for (const file of files) {
     'name="website"', 'name="form_started_at"', 'name="form_source" value="lead-modal"',
     'name="source_page"', 'name="selected_service"', 'name="selected_package"',
     'id="lead-sms-consent" type="checkbox" name="marketing_consent" value="yes" required',
-    'id="lead-sms-consent-error"', 'href="privacy-policy.html"', 'href="terms-of-service.html"',
+    'id="lead-sms-consent-error"',
   ]) {
-    if (!leadForm.includes(token)) failures.push(`${file}: lead form missing ${token}`);
+  if (!leadForm.includes(token)) failures.push(`${file}: lead form missing ${token}`);
+  }
+  for (const legalLink of ['href="privacy-policy.html"', 'href="terms-of-service.html"']) {
+    if (!html.includes(legalLink)) failures.push(`${file}: missing ${legalLink}`);
   }
 
   const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map(match => match[1]);
