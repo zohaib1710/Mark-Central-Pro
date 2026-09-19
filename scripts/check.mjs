@@ -4,6 +4,7 @@ import path from 'node:path';
 const root = path.resolve('.');
 const files = (await readdir(root)).filter(file => file.endsWith('.html'));
 const failures = [];
+const tawkEmbedUrl = 'https://embed.tawk.to/6aaef1db4b38543445c604b7/1k2tm1g7o';
 
 if (files.length !== 12) failures.push(`Expected 12 HTML pages, found ${files.length}`);
 
@@ -21,6 +22,18 @@ for (const file of files) {
   }
 
   if (/type=["']password/i.test(html)) failures.push(`${file}: contains a password input`);
+
+  const tawkEmbedCount = html.split(tawkEmbedUrl).length - 1;
+  if (tawkEmbedCount !== 1) failures.push(`${file}: expected one Tawk.to embed, found ${tawkEmbedCount}`);
+  for (const token of [
+    'var Tawk_API=Tawk_API||{}', 'Tawk_LoadStart=new Date()', 's1.async=true',
+    's1.charset="UTF-8"', 's1.setAttribute("crossorigin","*")',
+  ]) {
+    if (!html.includes(token)) failures.push(`${file}: Tawk.to embed missing ${token}`);
+  }
+  if (/s1\.src\s*=\s*["']\[https:\/\/embed\.tawk\.to/i.test(html)) {
+    failures.push(`${file}: Tawk.to source contains Markdown link syntax`);
+  }
 
   const leadForm = html.match(/<form class="dialog-form"[\s\S]*?<\/form>/)?.[0] || '';
   for (const token of [
